@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folder Chat</title>
+<style>
+  :root {
+    --bg: #fafaf9; --panel: #ffffff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4;
+    --soft: #f5f5f4; --accent: #0f766e; --btn: #0d0d0d; --btn-ink: #ffffff; --danger: #b91c1c;
+    --user: #f0fdfa; --user-line: #ccfbf1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09; --panel: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524;
+      --soft: #231f1d; --accent: #2dd4bf; --btn: #ffffff; --btn-ink: #0d0d0d; --danger: #f87171;
+      --user: #0f2a27; --user-line: #134e48;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: var(--panel); font-weight: 700; }
+  .title { font-weight: 650; }
+  .folder { color: var(--muted); font-size: 13px; }
+  .spacer { flex: 1; }
+  .chip { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  button { font: inherit; cursor: pointer; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 6px 14px; }
+  button:hover { background: var(--soft); }
+  button:disabled { opacity: .5; cursor: default; }
+  .btn-primary { background: var(--btn); color: var(--btn-ink); border-color: var(--btn); padding: 10px 20px; font-weight: 600; }
+  .btn-primary:hover { background: var(--btn); opacity: .88; }
+  .link { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .link:hover { background: none; }
+  main { flex: 1; overflow-y: auto; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px; }
+  .hero { text-align: center; padding: 12vh 0 0; }
+  .hero h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -.01em; }
+  .hero p { color: var(--muted); margin: 0 auto 24px; max-width: 460px; }
+  .fine { font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .msg { margin: 0 0 18px; }
+  .msg.user { background: var(--user); border: 1px solid var(--user-line); border-radius: 14px; padding: 10px 14px; margin-left: 15%; white-space: pre-wrap; }
+  .msg.assistant p { margin: 0 0 10px; }
+  .msg.assistant pre { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 13px; }
+  .msg.assistant code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--soft); padding: 1px 5px; border-radius: 5px; }
+  .msg.assistant pre code { background: none; padding: 0; }
+  .msg.error { color: var(--danger); font-size: 14px; }
+  .cursor::after { content: "▍"; animation: blink 1s steps(1) infinite; color: var(--accent); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .suggest { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+  footer { border-top: 1px solid var(--line); background: var(--panel); }
+  .composer { max-width: 760px; margin: 0 auto; padding: 12px 20px 10px; }
+  .box { display: flex; gap: 8px; align-items: flex-end; border: 1px solid var(--line); border-radius: 16px; padding: 8px 8px 8px 14px; background: var(--bg); }
+  textarea { flex: 1; border: 0; outline: 0; resize: none; background: transparent; color: var(--ink); font: inherit; max-height: 200px; padding: 6px 0; }
+  .send { border-radius: 12px; padding: 8px 14px; background: var(--btn); color: var(--btn-ink); border: 0; font-weight: 600; }
+  .send:hover { background: var(--btn); opacity: .88; }
+  .bar { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); padding: 8px 4px 0; flex-wrap: wrap; }
+  .bar select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; }
+  .plan { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  dialog { border: 1px solid var(--line); border-radius: 18px; padding: 28px; max-width: 400px; background: var(--panel); color: var(--ink); text-align: center; }
+  dialog::backdrop { background: rgb(0 0 0 / .4); }
+  dialog h2 { margin: 0 0 8px; font-size: 20px; }
+  dialog p { color: var(--muted); margin: 0 0 20px; }
+  dialog .actions { display: flex; flex-direction: column; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 600px) { .folder, .chip .email { display: none; } .msg.user { margin-left: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">F</div>
+  <div>
+    <div class="title">Folder Chat</div>
+    <div class="folder" id="folder">Loading…</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="chip" id="account" hidden>
+    <span class="email" id="email"></span>
+    <button id="signout">Sign out</button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap">
+    <!-- Signed out -->
+    <section class="hero" id="signedOut" hidden>
+      <h1>Chat with this folder</h1>
+      <p>Ask anything about the files in <b id="heroFolder"></b>. Answers run on your own ChatGPT plan, so there's no API key and nothing to pay for here.</p>
+      <button class="btn-primary" id="signin">Continue with ChatGPT</button>
+      <div class="fine">File contents are sent to OpenAI to answer your questions.</div>
+    </section>
+
+    <!-- Signed in, but plan usage not granted -->
+    <section class="hero" id="noPlan" hidden>
+      <h1>Use your ChatGPT plan</h1>
+      <p>You're signed in, but Folder Chat doesn't have permission to use your ChatGPT plan yet. It needs that to answer questions.</p>
+      <button class="btn-primary" id="enable">Continue with ChatGPT</button>
+    </section>
+
+    <!-- Chat -->
+    <section id="chat" hidden>
+      <div id="empty" class="hero" style="padding-top:8vh">
+        <h1>What do you want to know?</h1>
+        <p id="stats"></p>
+        <div class="suggest">
+          <button data-q="Summarize what's in this folder.">Summarize this folder</button>
+          <button data-q="What are the open TODOs or unfinished items?">Find open TODOs</button>
+          <button data-q="What decisions were made, and where are they written down?">List key decisions</button>
+        </div>
+      </div>
+      <div id="log"></div>
+    </section>
+  </div>
+</main>
+
+<footer id="footer" hidden>
+  <div class="composer">
+    <form class="box" id="form">
+      <textarea id="input" rows="1" placeholder="Ask about your files…" autofocus></textarea>
+      <button class="send" id="send" type="submit">Send</button>
+    </form>
+    <div class="bar">
+      <span class="plan"><span class="dot"></span>Using ChatGPT plan</span>
+      <a class="link" href="https://chatgpt.com/settings/usage" target="_blank" rel="noopener">Manage usage</a>
+      <span class="spacer"></span>
+      <select id="model" aria-label="Model"></select>
+      <button class="link" id="reload" type="button">Reload files</button>
+      <button class="link" id="clear" type="button">New chat</button>
+    </div>
+  </div>
+</footer>
+
+<dialog id="welcome">
+  <h2>You're using your ChatGPT plan</h2>
+  <p>Questions you ask in Folder Chat use your ChatGPT plan. You can review usage and set limits in ChatGPT settings.</p>
+  <div class="actions"><button class="btn-primary" id="gotit">Got it</button></div>
+</dialog>
+
+<dialog id="limit">
+  <h2>Usage limit reached</h2>
+  <p>You've hit a ChatGPT plan limit, or the limit you set for Folder Chat. Review it in ChatGPT settings.</p>
+  <div class="actions">
+    <a class="btn-primary" href="https://chatgpt.com/settings/usage" target="_blank" rel="noopener" style="text-decoration:none;border-radius:999px">Manage usage</a>
+    <button id="limitClose">Close</button>
+  </div>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let messages = [];
+let busy = false;
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.message || `HTTP ${res.status}`), data);
+  return data;
+}
+
+function show(view) {
+  for (const id of ["signedOut", "noPlan", "chat"]) $(id).hidden = id !== view;
+  $("footer").hidden = view !== "chat";
+}
+
+function render(s) {
+  $("folder").textContent = `${s.path} · ${s.files} files`;
+  $("heroFolder").textContent = s.folder;
+  $("stats").textContent = `${s.files} files from ${s.folder} are loaded (${Math.round(s.chars / 1000)}k characters)${s.skipped ? `. ${s.skipped} skipped for size` : ""}.`;
+  const a = s.account;
+  $("account").hidden = !a?.signedIn;
+  $("email").textContent = a?.email ?? "";
+  if (!a?.signedIn) return show("signedOut");
+  if (!a.planEnabled) return show("noPlan");
+  show("chat");
+}
+
+async function loadModels() {
+  const models = await api("/api/models");
+  const saved = localStorage.getItem("model");
+  $("model").innerHTML = models.map((m) => `<option value="${m.slug}">${esc(m.displayName)}</option>`).join("");
+  if (models.some((m) => m.slug === saved)) $("model").value = saved;
+}
+
+async function refresh() {
+  const s = await api("/api/state");
+  render(s);
+  if (s.account?.signedIn && s.account.planEnabled) await loadModels().catch(handleError);
+}
+
+async function signIn(consent) {
+  const btn = consent ? $("enable") : $("signin");
+  btn.disabled = true;
+  btn.textContent = "Finish signing in in your browser…";
+  try {
+    const s = await api("/api/signin", { consent });
+    render(s);
+    if (s.account?.planEnabled) {
+      await loadModels();
+      if (!localStorage.getItem("welcomed")) $("welcome").showModal();
+    }
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Continue with ChatGPT";
+  }
+}
+
+function handleError(e) {
+  if (e.recovery === "manage_usage") return $("limit").showModal();
+  if (e.recovery === "sign_in" || e.recovery === "enable_plan") return refresh();
+  addMsg("error", `${e.message}${e.recovery === "retry_later" ? " Try again in a moment." : ""}`);
+}
+
+// ---- chat ---------------------------------------------------------------------------------------
+
+function esc(s) {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+}
+
+/** Just enough Markdown: fenced code, inline code, bold, lists, paragraphs. */
+function md(src) {
+  const parts = src.split(/```(\w*)\n?([\s\S]*?)(?:```|$)/g);
+  let out = "";
+  for (let i = 0; i < parts.length; i += 3) {
+    out += esc(parts[i])
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+      .split(/\n{2,}/)
+      .map((p) => (p.trim() ? `<p>${p.replace(/\n/g, "<br>")}</p>` : ""))
+      .join("");
+    if (parts[i + 2] !== undefined) out += `<pre><code>${esc(parts[i + 2])}</code></pre>`;
+  }
+  return out;
+}
+
+function addMsg(role, text) {
+  $("empty").hidden = true;
+  const el = document.createElement("div");
+  el.className = `msg ${role}`;
+  if (role === "assistant") el.innerHTML = md(text);
+  else el.textContent = text;
+  $("log").append(el);
+  $("main").scrollTop = $("main").scrollHeight;
+  return el;
+}
+
+async function ask(q) {
+  if (busy || !q.trim()) return;
+  busy = true;
+  $("send").disabled = true;
+  messages.push({ role: "user", content: q });
+  addMsg("user", q);
+  const el = addMsg("assistant", "");
+  el.classList.add("cursor");
+  let text = "";
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ model: $("model").value, messages }),
+    });
+    if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), await res.json().catch(() => ({})));
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      buf += dec.decode(value, { stream: !done });
+      let nl;
+      while ((nl = buf.indexOf("\n")) !== -1) {
+        const line = JSON.parse(buf.slice(0, nl));
+        buf = buf.slice(nl + 1);
+        if (line.error) throw Object.assign(new Error(line.error.message), line.error);
+        if (line.d) {
+          text += line.d;
+          el.innerHTML = md(text);
+          $("main").scrollTop = $("main").scrollHeight;
+        }
+      }
+      if (done) break;
+    }
+    messages.push({ role: "assistant", content: text });
+  } catch (e) {
+    // Keep the partial answer, and drop the unanswered question from history.
+    if (!text) el.remove();
+    messages.pop();
+    handleError(e);
+  } finally {
+    el.classList.remove("cursor");
+    busy = false;
+    $("send").disabled = false;
+  }
+}
+
+$("form").onsubmit = (e) => {
+  e.preventDefault();
+  const q = $("input").value;
+  $("input").value = "";
+  $("input").style.height = "";
+  ask(q);
+};
+$("input").onkeydown = (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    $("form").requestSubmit();
+  }
+};
+$("input").oninput = () => {
+  $("input").style.height = "";
+  $("input").style.height = `${$("input").scrollHeight}px`;
+};
+document.querySelectorAll("[data-q]").forEach((b) => (b.onclick = () => ask(b.dataset.q)));
+$("model").onchange = () => localStorage.setItem("model", $("model").value);
+$("signin").onclick = () => signIn(false);
+$("enable").onclick = () => signIn(true);
+$("signout").onclick = async () => {
+  const s = await api("/api/signout", {});
+  if (!s.revoked) alert("Signed out here, but we couldn't confirm with ChatGPT. You can disconnect Folder Chat in ChatGPT settings.");
+  messages = [];
+  $("log").innerHTML = "";
+  render(s);
+};
+$("reload").onclick = async () => render(await api("/api/reload", {}));
+$("clear").onclick = () => {
+  messages = [];
+  $("log").innerHTML = "";
+  $("empty").hidden = false;
+};
+$("gotit").onclick = () => {
+  localStorage.setItem("welcomed", "1");
+  $("welcome").close();
+};
+$("limitClose").onclick = () => $("limit").close();
+
+refresh().catch((e) => ($("folder").textContent = e.message));
+</script>
+</body>
+</html>

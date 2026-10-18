@@ -1,0 +1,43 @@
+{
+  "name": "plankit",
+  "version": "0.1.0",
+  "description": "MIT-licensed, zero-dependency SDK for letting users power your open-source local app with their own ChatGPT plan (Sign in with ChatGPT).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "plankit": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/",
+    "prepublishOnly": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "chatgpt",
+    "sign-in-with-chatgpt",
+    "oauth",
+    "pkce",
+    "responses-api",
+    "local-first",
+    "open-source"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "folder-chat",
+  "version": "0.1.0",
+  "description": "Chat with any folder on your machine using your ChatGPT plan. No API key.",
+  "type": "module",
+  "bin": {
+    "folder-chat": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "plankit": "file:../.."
+  },
+  "license": "MIT"
+}
